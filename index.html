@@ -106,7 +106,7 @@
     }
 
     /* Responsive styles for mobile screens */
-    @media (max-width: 10px) {
+    @media (max-width: 600px) {
       body {
         padding: 10px;
         font-size: 16px;
@@ -214,50 +214,36 @@ greenImage.addEventListener('click', (e) => {
 
 function showClubButtons(x, y) {
   const containerRect = imageContainer.getBoundingClientRect();
-  const relativeX = x;
-  const relativeY = y;
-
-  // Position buttons within the image container
-  const offsetX = 60:        // <-- Colon should be semicolon ;
+  const buttonWidth = 160;
+  const buttonHeight = 80;
+  const offsetX = 60;
   const offsetY = 20;
+
   let left = x + offsetX;
   let top = y + offsetY;
 
-  const conataineerRect = imageContainer.getBound  // <-- typo & incomplete
-  const buttonWidth = 160;
-  const buttonHeight = 80;
-  if (left + buttonWidth > containerRect.Width) {   // <-- property name should be lowercase 'width'
-      left = containerRect.width - buttonWidth - 10;
+  if (left + buttonWidth > containerRect.width) {
+    left = containerRect.width - buttonWidth - 10;
   }
+
   if (top + buttonHeight > containerRect.height) {
     top = containerRect.height - buttonHeight - 10;
-    
-  clubButtons.style.left = `${relativeX}px`;   // <-- these lines are incorrectly nested inside if block and missing closing bracket for if
-  clubButtons.style.top = `${relativeY}px`;
-
-  // Avoid off-screen overflow
-  const buffer = 100; // space to prevent cutoff
-  const imageWidth = imageContainer.offsetWidth;
-  const imageHeight = imageContainer.offsetHeight;
-
-  // Adjust if too far to the right or bottom
-  if (relativeX + 120 > imageWidth) {
-    clubButtons.style.left = `${imageWidth - 120}px`;
   }
-  if (relativeY + 80 > imageHeight) {
-    clubButtons.style.top = `${imageHeight - 80}px`;
-  }
+
+  clubButtons.style.left = `${left}px`;
+  clubButtons.style.top = `${top}px`;
 
   clubButtons.innerHTML = '';
   Object.keys(clubColors).forEach(club => {
     const btn = document.createElement('button');
     btn.innerText = club;
-    btn.onclick = () => addShot(relativeX, relativeY, club);
+    btn.onclick = () => addShot(x, y, club);
     clubButtons.appendChild(btn);
   });
 
   clubButtons.style.display = 'flex';
 }
+
 
 
 function addShot(x, y, club) {
