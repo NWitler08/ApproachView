@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Green Plotter</title>
 
-  <!-- Favicon for desktop browsers -->
+  <!-- Favicon -->
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
   <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
 
@@ -39,6 +39,7 @@
       padding: 20px;
       background-color: #fff;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      position: relative; /* Important for absolute positioning children */
     }
 
     #hole-selector {
@@ -56,6 +57,10 @@
     #green-image {
       width: 100%;
       display: block;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
     }
 
     .dot {
@@ -74,6 +79,8 @@
       font-size: 12px;
       display: none;
       z-index: 10;
+      pointer-events: none;
+      user-select: none;
     }
 
     .club-buttons {
@@ -87,8 +94,9 @@
       border-radius: 5px;
       z-index: 20;
       pointer-events: auto;
-      /* Removed transform to align popup exactly */
-      /* transform: translate(-50%, -100%); */
+
+      /* Center horizontally on left coordinate */
+      transform: translateX(-50%);
     }
 
     .club-buttons button {
@@ -169,7 +177,7 @@
       <button onclick="clearData()">Clear Shots</button>
     </div>
     <div id="image-container">
-      <img id="green-image" />
+      <img id="green-image" alt="Golf Hole" />
     </div>
   </div>
   <div class="tooltip" id="tooltip"></div>
@@ -188,10 +196,11 @@
     const clubColors = {
       'Wedges': 'red',
       'Short Irons': 'blue',
-      'Long Irons': 'white',  // Changed to white here
+      'Long Irons': 'white', // changed to white as requested
       'Woods': 'yellow'
     };
 
+    // Populate hole selector
     for (let i = 1; i <= 18; i++) {
       const option = document.createElement('option');
       option.value = `hole${i}`;
@@ -199,7 +208,7 @@
       holeSelector.appendChild(option);
     }
 
-    // Auto-select the first hole on page load
+    // Auto-select first hole and load data on page load
     currentHole = 'hole1';
     holeSelector.value = currentHole;
     loadHoleData();
@@ -209,57 +218,52 @@
       loadHoleData();
     });
 
+    // Click on image: show club buttons centered above click
     greenImage.addEventListener('click', (e) => {
-      const rect = greenImage.getBoundingClientRect();
-      const xPercent = (e.clientX - rect.left) / rect.width;
-      const yPercent = (e.clientY - rect.top) / rect.height;
-      showClubButtons(xPercent, yPercent);
+      // Get container bounding rect
+      const rect = imageContainer.getBoundingClientRect();
+
+      // Calculate click coords relative to container
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      // Calculate percentages (for saving shots)
+      const xPercent = x / greenImage.offsetWidth;
+      const yPercent = y / greenImage.offsetHeight;
+
+      showClubButtons(x, y, xPercent, yPercent);
     });
 
-    // Close club buttons if clicking outside
+    // Clicking outside closes the club buttons
     document.addEventListener('click', (e) => {
-      if (!greenImage.contains(e.target) && !clubButtons.contains(e.target)) {
+      if (!imageContainer.contains(e.target) && !clubButtons.contains(e.target)) {
         clubButtons.style.display = 'none';
       }
     });
 
-function showClubButtons(xPercent, yPercent) {
-  const x = xPercent * greenImage.offsetWidth;
-  const y = yPercent * greenImage.offsetHeight;
+    function showClubButtons(x, y, xPercent, yPercent) {
+      clubButtons.style.left = `${x}px`;
+      clubButtons.style.top = `${y - 10}px`; // 10px above click
 
-  clubButtons.style.left = '0px'; // reset before measuring
-  clubButtons.style.top = '0px';  // reset before measuring
-  clubButtons.style.display = 'flex';
+      clubButtons.innerHTML = '';
+      Object.keys(clubColors).forEach(club => {
+        const btn = document.createElement('button');
+        btn.innerText = club;
+        btn.onclick = () => {
+          addShot(xPercent, yPercent, club);
+          clubButtons.style.display = 'none';
+        };
+        clubButtons.appendChild(btn);
+      });
 
-  clubButtons.innerHTML = '';
-  Object.keys(clubColors).forEach(club => {
-    const btn = document.createElement('button');
-    btn.innerText = club;
-    btn.onclick = () => addShot(xPercent, yPercent, club);
-    clubButtons.appendChild(btn);
-  });
-
-  // After the popup content is rendered, calculate width and reposition
-  requestAnimationFrame(() => {
-    const popupWidth = clubButtons.offsetWidth;
-    const popupHeight = clubButtons.offsetHeight;
-
-    // Set left so popup is horizontally centered at click
-    clubButtons.style.left = `${x - popupWidth / 2}px`;
-    // Set top so popup appears directly above click with 10px margin
-    clubButtons.style.top = `${y - popupHeight - 10}px`;
-  });
-}
-
-
+      clubButtons.style.display = 'flex';
+    }
 
     function addShot(xPercent, yPercent, club) {
       const date = new Date().toLocaleDateString();
-      const shot = { xPercent, yPercent, club, date };
-      shots.push(shot);
+      shots.push({ xPercent, yPercent, club, date });
       saveData();
       renderShots();
-      clubButtons.style.display = 'none';
     }
 
     function saveData() {
@@ -282,6 +286,7 @@ function showClubButtons(xPercent, yPercent) {
     }
 
     function renderShots(filter = 'all') {
+      // Remove existing dots
       document.querySelectorAll('.dot').forEach(dot => dot.remove());
 
       shots.forEach(shot => {
@@ -292,20 +297,12 @@ function showClubButtons(xPercent, yPercent) {
           const x = shot.xPercent * greenImage.offsetWidth;
           const y = shot.yPercent * greenImage.offsetHeight;
 
-          dot.style.left = `${x}px`;
-          dot.style.top = `${y}px`;
-          dot.style.backgroundColor = clubColors[shot.club];
+          dot.style.left = `${x - 5}px`; // center dot horizontally
+          dot.style.top = `${y - 5}px`;  // center dot vertically
+          dot.style.backgroundColor = clubColors[shot.club] || 'black';
 
-          dot.onmouseenter = () => {
-            tooltip.style.left = `${x + 15}px`;
-            tooltip.style.top = `${y + 15}px`;
-            tooltip.innerHTML = `${shot.club}<br>${shot.date}`;
-            tooltip.style.display = 'block';
-          };
-
-          dot.onmouseleave = () => {
-            tooltip.style.display = 'none';
-          };
+          dot.title = `${shot.club} - ${shot.date}`;
+          dot.dataset.club = shot.club;
 
           imageContainer.appendChild(dot);
         }
@@ -313,21 +310,19 @@ function showClubButtons(xPercent, yPercent) {
     }
 
     function filterByClub(club) {
-      renderShots(club);
-    }
-
-    function clearData() {
-      if (confirm('Are you sure you want to clear all shots for this hole?')) {
-        localStorage.removeItem(currentHole + '-shots');
-        shots = [];
-        renderShots();
+      if (club === 'all') {
+        renderShots('all');
+      } else {
+        renderShots(club);
       }
     }
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(() => {
-        console.log('Service Worker registered');
-      });
+    function clearData() {
+      if (confirm('Clear all shots for this hole?')) {
+        shots = [];
+        saveData();
+        renderShots();
+      }
     }
   </script>
 </body>
