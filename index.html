@@ -1,14 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Green Plotter</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <link rel="apple-touch-icon" href="icon-192.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- Favicon for desktop browsers -->
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+
+  <!-- PWA manifest and icons -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+
   <style>
     body {
       margin: 0;
@@ -20,10 +26,12 @@
       align-items: center;
       padding: 20px;
     }
+
     h1 {
       font-size: 3rem;
       margin-bottom: 10px;
     }
+
     .container {
       max-width: 1000px;
       width: 100%;
@@ -32,9 +40,11 @@
       background-color: #fff;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     }
+
     #hole-selector {
       margin-bottom: 10px;
     }
+
     #image-container {
       position: relative;
       width: 100%;
@@ -42,10 +52,13 @@
       overflow: hidden;
       border: 3px solid #c2a76c;
     }
+
     #green-image {
       width: 100%;
       display: block;
+      user-select: none;
     }
+
     .dot {
       position: absolute;
       width: 10px;
@@ -53,6 +66,7 @@
       border-radius: 50%;
       cursor: pointer;
     }
+
     .tooltip {
       position: absolute;
       background: white;
@@ -62,6 +76,7 @@
       display: none;
       z-index: 10;
     }
+
     .club-buttons {
       position: absolute;
       display: flex;
@@ -73,38 +88,68 @@
       border-radius: 5px;
       z-index: 20;
       pointer-events: auto;
-      transform: translate(-50%, -100%);
+      /* We'll handle centering in JS */
     }
+
     .club-buttons button {
       padding: 3px 6px;
       font-size: 12px;
       cursor: pointer;
     }
+
     .filter-bar {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       margin: 10px 0;
     }
+
     .filter-bar button {
       padding: 5px 10px;
       cursor: pointer;
     }
+
+    /* Responsive styles for mobile screens */
     @media (max-width: 600px) {
+      body {
+        padding: 10px;
+        font-size: 16px;
+      }
+
       h1 {
         font-size: 2rem;
       }
+
       .container {
         padding: 10px;
+        border-width: 2px;
+        max-width: 100%;
       }
+
       #image-container {
         max-height: 400px;
+        border-width: 2px;
       }
+
       .filter-bar {
         flex-direction: column;
       }
+
+      .filter-bar button {
+        width: 100%;
+        font-size: 1rem;
+        padding: 10px 0;
+      }
+
       .club-buttons button {
-        font-size: 10px;
+        font-size: 8px;
+        padding: 3px 6px;
+        min-width: auto;
+      }
+
+      .dot {
+        width: 7px;
+        height: 7px;
       }
     }
   </style>
@@ -132,8 +177,8 @@
 
   <script>
     const holeSelector = document.getElementById('hole-selector');
-    const greenImage = document.getElementById('green-image');
     const imageContainer = document.getElementById('image-container');
+    const greenImage = document.getElementById('green-image');
     const tooltip = document.getElementById('tooltip');
     const clubButtons = document.getElementById('club-buttons');
 
@@ -143,7 +188,7 @@
     const clubColors = {
       'Wedges': 'red',
       'Short Irons': 'blue',
-      'Long Irons': 'white',
+      'Long Irons': 'white',  // Changed to white as requested
       'Woods': 'yellow'
     };
 
@@ -154,6 +199,7 @@
       holeSelector.appendChild(option);
     }
 
+    // Auto-select the first hole on page load
     currentHole = 'hole1';
     holeSelector.value = currentHole;
     loadHoleData();
@@ -165,30 +211,56 @@
 
     greenImage.addEventListener('click', (e) => {
       const rect = greenImage.getBoundingClientRect();
+      // Calculate click coords relative to image top-left
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
+
+      // Calculate relative percent position (0-1)
       const xPercent = x / rect.width;
       const yPercent = y / rect.height;
-      showClubButtons(xPercent, yPercent, x, y);
+
+      showClubButtons(x, y, xPercent, yPercent);
     });
 
+    // Close club buttons if clicking outside
     document.addEventListener('click', (e) => {
-      if (!greenImage.contains(e.target) && !clubButtons.contains(e.target)) {
+      const isInsideImage = greenImage.contains(e.target);
+      const isInsideButtons = clubButtons.contains(e.target);
+
+      if (!isInsideImage && !isInsideButtons) {
         clubButtons.style.display = 'none';
       }
     });
 
-    function showClubButtons(xPercent, yPercent, x, y) {
+    function showClubButtons(x, y, xPercent, yPercent) {
+      // Position the clubButtons div centered on click (adjusted for size)
       clubButtons.style.left = `${x}px`;
       clubButtons.style.top = `${y}px`;
+
       clubButtons.innerHTML = '';
       Object.keys(clubColors).forEach(club => {
         const btn = document.createElement('button');
-        btn.textContent = club;
+        btn.innerText = club;
         btn.onclick = () => addShot(xPercent, yPercent, club);
         clubButtons.appendChild(btn);
       });
+
       clubButtons.style.display = 'flex';
+      clubButtons.style.flexWrap = 'wrap';
+      clubButtons.style.gap = '5px';
+
+      // Offset the menu so it doesn't go outside viewport on right/bottom edges
+      const containerRect = imageContainer.getBoundingClientRect();
+      const menuRect = clubButtons.getBoundingClientRect();
+
+      // Adjust left if menu goes beyond right edge
+      if (x + menuRect.width > containerRect.width) {
+        clubButtons.style.left = `${containerRect.width - menuRect.width}px`;
+      }
+      // Adjust top if menu goes beyond bottom edge
+      if (y + menuRect.height > containerRect.height) {
+        clubButtons.style.top = `${containerRect.height - menuRect.height}px`;
+      }
     }
 
     function addShot(xPercent, yPercent, club) {
@@ -201,56 +273,71 @@
     }
 
     function saveData() {
-      localStorage.setItem(`${currentHole}-shots`, JSON.stringify(shots));
+      localStorage.setItem(currentHole + '-shots', JSON.stringify(shots));
     }
 
     function loadHoleData() {
-      const data = localStorage.getItem(`${currentHole}-shots`);
+      const data = localStorage.getItem(currentHole + '-shots');
       shots = data ? JSON.parse(data) : [];
-      const img = localStorage.getItem(`${currentHole}-image`);
-      greenImage.src = img || `./images/${currentHole.replace('hole', '')}.png`;
+
+      const img = localStorage.getItem(currentHole + '-image');
+      if (img) {
+        greenImage.src = img;
+      } else {
+        const holeNumber = currentHole.replace('hole', '');
+        greenImage.src = `./images/${holeNumber}.png`;
+      }
+
       renderShots();
     }
 
     function renderShots(filter = 'all') {
+      // Remove existing dots
       document.querySelectorAll('.dot').forEach(dot => dot.remove());
+
       shots.forEach(shot => {
         if (filter === 'all' || shot.club === filter) {
           const dot = document.createElement('div');
           dot.className = 'dot';
-          const x = shot.xPercent * greenImage.clientWidth;
-          const y = shot.yPercent * greenImage.clientHeight;
+
+          // Use current image size for positioning
+          const x = shot.xPercent * greenImage.offsetWidth;
+          const y = shot.yPercent * greenImage.offsetHeight;
+
           dot.style.left = `${x}px`;
           dot.style.top = `${y}px`;
           dot.style.backgroundColor = clubColors[shot.club];
+
           dot.onmouseenter = () => {
             tooltip.style.left = `${x + 15}px`;
             tooltip.style.top = `${y + 15}px`;
             tooltip.innerHTML = `${shot.club}<br>${shot.date}`;
             tooltip.style.display = 'block';
           };
-          dot.onmouseleave = () => tooltip.style.display = 'none';
+
+          dot.onmouseleave = () => {
+            tooltip.style.display = 'none';
+          };
+
           imageContainer.appendChild(dot);
         }
       });
     }
 
     function filterByClub(club) {
-      renderShots(club);
-    }
-
-    function clearData() {
-      if (confirm('Are you sure you want to clear all shots for this hole?')) {
-        localStorage.removeItem(`${currentHole}-shots`);
-        shots = [];
+      if (club === 'all') {
         renderShots();
+      } else {
+        renderShots(club);
       }
     }
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(() => {
-        console.log('Service Worker Registered');
-      });
+    function clearData() {
+      if (confirm('Clear all shots for this hole?')) {
+        shots = [];
+        saveData();
+        renderShots();
+      }
     }
   </script>
 </body>
