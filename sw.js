@@ -1,70 +1,51 @@
 const CACHE_NAME = 'green-plotter-v1';
-const FILES_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/favicon.ico',
-  '/icon-192.png',
-  '/sw.js',
-  // add all your CSS, JS, and image files here
-  // e.g. '/styles.css', '/script.js', '/images/1.png', '/images/2.png', ...
-];
 
-// Install event: cache core files
+// Install event: skip waiting immediately (no pre-caching)
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('[ServiceWorker] Caching app shell');
-        return cache.addAll(FILES_TO_CACHE);
-      })
-      .then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
-// Activate event: clean old caches
+// Activate event: clean up old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys()
-      .then(keyList => Promise.all(
+    caches.keys().then(keyList =>
+      Promise.all(
         keyList.map(key => {
           if (key !== CACHE_NAME) {
-            console.log('[ServiceWorker] Removing old cache:', key);
             return caches.delete(key);
           }
         })
-      ))
-      .then(() => self.clients.claim())
+      )
+    ).then(() => self.clients.claim())
   );
 });
 
-// Fetch event: respond with cached resources or fetch from network
+// Fetch event: try cache first, then network, cache dynamically
 self.addEventListener('fetch', event => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request)
-      .then(cachedResponse => {
-        if (cachedResponse) {
-          return cachedResponse;
+    caches.match(event.request).then(cachedResponse => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      return fetch(event.request).then(networkResponse => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+          return networkResponse;
         }
-        // Fetch from network and cache it for future
-        return fetch(event.request)
-          .then(response => {
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
 
-            // Clone response and put in cache
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
+        // Cache the new response dynamically
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, responseToCache);
+        });
 
-            return response;
-          });
-      })
+        return networkResponse;
+      });
+    }).catch(() => {
+      // Optional fallback when offline and cache misses
+      // e.g., return caches.match('/offline.html');
+    })
   );
 });
