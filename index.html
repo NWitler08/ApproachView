@@ -56,7 +56,6 @@
     #green-image {
       width: 100%;
       display: block;
-      user-select: none;
     }
 
     .dot {
@@ -88,7 +87,8 @@
       border-radius: 5px;
       z-index: 20;
       pointer-events: auto;
-      /* We'll handle centering in JS */
+      /* Removed transform to align popup exactly */
+      /* transform: translate(-50%, -100%); */
     }
 
     .club-buttons button {
@@ -188,7 +188,7 @@
     const clubColors = {
       'Wedges': 'red',
       'Short Irons': 'blue',
-      'Long Irons': 'white',  // Changed to white as requested
+      'Long Irons': 'white',  // Changed to white here
       'Woods': 'yellow'
     };
 
@@ -211,31 +211,24 @@
 
     greenImage.addEventListener('click', (e) => {
       const rect = greenImage.getBoundingClientRect();
-      // Calculate click coords relative to image top-left
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      // Calculate relative percent position (0-1)
-      const xPercent = x / rect.width;
-      const yPercent = y / rect.height;
-
-      showClubButtons(x, y, xPercent, yPercent);
+      const xPercent = (e.clientX - rect.left) / rect.width;
+      const yPercent = (e.clientY - rect.top) / rect.height;
+      showClubButtons(xPercent, yPercent);
     });
 
     // Close club buttons if clicking outside
     document.addEventListener('click', (e) => {
-      const isInsideImage = greenImage.contains(e.target);
-      const isInsideButtons = clubButtons.contains(e.target);
-
-      if (!isInsideImage && !isInsideButtons) {
+      if (!greenImage.contains(e.target) && !clubButtons.contains(e.target)) {
         clubButtons.style.display = 'none';
       }
     });
 
-    function showClubButtons(x, y, xPercent, yPercent) {
-      // Position the clubButtons div centered on click (adjusted for size)
+    function showClubButtons(xPercent, yPercent) {
+      const x = xPercent * greenImage.offsetWidth;
+      const y = yPercent * greenImage.offsetHeight;
+
       clubButtons.style.left = `${x}px`;
-      clubButtons.style.top = `${y}px`;
+      clubButtons.style.top = `${y - clubButtons.offsetHeight - 10}px`;  // Position above click
 
       clubButtons.innerHTML = '';
       Object.keys(clubColors).forEach(club => {
@@ -246,21 +239,6 @@
       });
 
       clubButtons.style.display = 'flex';
-      clubButtons.style.flexWrap = 'wrap';
-      clubButtons.style.gap = '5px';
-
-      // Offset the menu so it doesn't go outside viewport on right/bottom edges
-      const containerRect = imageContainer.getBoundingClientRect();
-      const menuRect = clubButtons.getBoundingClientRect();
-
-      // Adjust left if menu goes beyond right edge
-      if (x + menuRect.width > containerRect.width) {
-        clubButtons.style.left = `${containerRect.width - menuRect.width}px`;
-      }
-      // Adjust top if menu goes beyond bottom edge
-      if (y + menuRect.height > containerRect.height) {
-        clubButtons.style.top = `${containerRect.height - menuRect.height}px`;
-      }
     }
 
     function addShot(xPercent, yPercent, club) {
@@ -292,7 +270,6 @@
     }
 
     function renderShots(filter = 'all') {
-      // Remove existing dots
       document.querySelectorAll('.dot').forEach(dot => dot.remove());
 
       shots.forEach(shot => {
@@ -300,7 +277,6 @@
           const dot = document.createElement('div');
           dot.className = 'dot';
 
-          // Use current image size for positioning
           const x = shot.xPercent * greenImage.offsetWidth;
           const y = shot.yPercent * greenImage.offsetHeight;
 
@@ -325,19 +301,21 @@
     }
 
     function filterByClub(club) {
-      if (club === 'all') {
-        renderShots();
-      } else {
-        renderShots(club);
-      }
+      renderShots(club);
     }
 
     function clearData() {
-      if (confirm('Clear all shots for this hole?')) {
+      if (confirm('Are you sure you want to clear all shots for this hole?')) {
+        localStorage.removeItem(currentHole + '-shots');
         shots = [];
-        saveData();
         renderShots();
       }
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(() => {
+        console.log('Service Worker registered');
+      });
     }
   </script>
 </body>
