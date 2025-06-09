@@ -1,17 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Green Plotter</title>
-
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />
-  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
-
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <style>
     body {
       margin: 0;
@@ -23,12 +20,10 @@
       align-items: center;
       padding: 20px;
     }
-
     h1 {
       font-size: 3rem;
       margin-bottom: 10px;
     }
-
     .container {
       max-width: 1000px;
       width: 100%;
@@ -37,11 +32,9 @@
       background-color: #fff;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     }
-
     #hole-selector {
       margin-bottom: 10px;
     }
-
     #image-container {
       position: relative;
       width: 100%;
@@ -49,12 +42,10 @@
       overflow: hidden;
       border: 3px solid #c2a76c;
     }
-
     #green-image {
       width: 100%;
       display: block;
     }
-
     .dot {
       position: absolute;
       width: 10px;
@@ -62,7 +53,6 @@
       border-radius: 50%;
       cursor: pointer;
     }
-
     .tooltip {
       position: absolute;
       background: white;
@@ -72,7 +62,6 @@
       display: none;
       z-index: 10;
     }
-
     .club-buttons {
       position: absolute;
       display: flex;
@@ -86,65 +75,36 @@
       pointer-events: auto;
       transform: translate(-50%, -100%);
     }
-
     .club-buttons button {
       padding: 3px 6px;
       font-size: 12px;
       cursor: pointer;
     }
-
     .filter-bar {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       margin: 10px 0;
     }
-
     .filter-bar button {
       padding: 5px 10px;
       cursor: pointer;
     }
-
     @media (max-width: 600px) {
-      body {
-        padding: 10px;
-        font-size: 16px;
-      }
-
       h1 {
         font-size: 2rem;
       }
-
       .container {
         padding: 10px;
-        border-width: 2px;
-        max-width: 100%;
       }
-
       #image-container {
         max-height: 400px;
-        border-width: 2px;
       }
-
       .filter-bar {
         flex-direction: column;
       }
-
-      .filter-bar button {
-        width: 100%;
-        font-size: 1rem;
-        padding: 10px 0;
-      }
-
       .club-buttons button {
-        font-size: 8px;
-        padding: 3px 6px;
-        min-width: auto;
-      }
-
-      .dot {
-        width: 7px;
-        height: 7px;
+        font-size: 10px;
       }
     }
   </style>
@@ -172,8 +132,8 @@
 
   <script>
     const holeSelector = document.getElementById('hole-selector');
-    const imageContainer = document.getElementById('image-container');
     const greenImage = document.getElementById('green-image');
+    const imageContainer = document.getElementById('image-container');
     const tooltip = document.getElementById('tooltip');
     const clubButtons = document.getElementById('club-buttons');
 
@@ -205,9 +165,11 @@
 
     greenImage.addEventListener('click', (e) => {
       const rect = greenImage.getBoundingClientRect();
-      const xPercent = (e.clientX - rect.left) / rect.width;
-      const yPercent = (e.clientY - rect.top) / rect.height;
-      showClubButtons(xPercent, yPercent);
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const xPercent = x / rect.width;
+      const yPercent = y / rect.height;
+      showClubButtons(xPercent, yPercent, x, y);
     });
 
     document.addEventListener('click', (e) => {
@@ -216,21 +178,16 @@
       }
     });
 
-    function showClubButtons(xPercent, yPercent) {
-      const x = xPercent * greenImage.offsetWidth;
-      const y = yPercent * greenImage.offsetHeight;
-
+    function showClubButtons(xPercent, yPercent, x, y) {
       clubButtons.style.left = `${x}px`;
       clubButtons.style.top = `${y}px`;
       clubButtons.innerHTML = '';
-
       Object.keys(clubColors).forEach(club => {
         const btn = document.createElement('button');
-        btn.innerText = club;
+        btn.textContent = club;
         btn.onclick = () => addShot(xPercent, yPercent, club);
         clubButtons.appendChild(btn);
       });
-
       clubButtons.style.display = 'flex';
     }
 
@@ -244,56 +201,35 @@
     }
 
     function saveData() {
-      localStorage.setItem(currentHole + '-shots', JSON.stringify(shots));
+      localStorage.setItem(`${currentHole}-shots`, JSON.stringify(shots));
     }
 
     function loadHoleData() {
-      const data = localStorage.getItem(currentHole + '-shots');
+      const data = localStorage.getItem(`${currentHole}-shots`);
       shots = data ? JSON.parse(data) : [];
-
-      const img = localStorage.getItem(currentHole + '-image');
-      if (img) {
-        greenImage.src = img;
-      } else {
-        const holeNumber = currentHole.replace('hole', '');
-        greenImage.src = `./images/${holeNumber}.png`;
-      }
-
-      greenImage.onload = () => {
-        renderShots();
-      };
+      const img = localStorage.getItem(`${currentHole}-image`);
+      greenImage.src = img || `./images/${currentHole.replace('hole', '')}.png`;
+      renderShots();
     }
 
     function renderShots(filter = 'all') {
       document.querySelectorAll('.dot').forEach(dot => dot.remove());
-
       shots.forEach(shot => {
         if (filter === 'all' || shot.club === filter) {
           const dot = document.createElement('div');
           dot.className = 'dot';
-
-          const x = shot.xPercent * greenImage.offsetWidth;
-          const y = shot.yPercent * greenImage.offsetHeight;
-
+          const x = shot.xPercent * greenImage.clientWidth;
+          const y = shot.yPercent * greenImage.clientHeight;
           dot.style.left = `${x}px`;
           dot.style.top = `${y}px`;
           dot.style.backgroundColor = clubColors[shot.club];
-
-          if (clubColors[shot.club] === 'white') {
-            dot.style.border = '1px solid black';
-          }
-
           dot.onmouseenter = () => {
             tooltip.style.left = `${x + 15}px`;
             tooltip.style.top = `${y + 15}px`;
             tooltip.innerHTML = `${shot.club}<br>${shot.date}`;
             tooltip.style.display = 'block';
           };
-
-          dot.onmouseleave = () => {
-            tooltip.style.display = 'none';
-          };
-
+          dot.onmouseleave = () => tooltip.style.display = 'none';
           imageContainer.appendChild(dot);
         }
       });
@@ -305,7 +241,7 @@
 
     function clearData() {
       if (confirm('Are you sure you want to clear all shots for this hole?')) {
-        localStorage.removeItem(currentHole + '-shots');
+        localStorage.removeItem(`${currentHole}-shots`);
         shots = [];
         renderShots();
       }
@@ -313,7 +249,7 @@
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then(() => {
-        console.log('Service Worker registered');
+        console.log('Service Worker Registered');
       });
     }
   </script>
