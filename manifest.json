@@ -1,6 +1,6 @@
 {
-  "name": "Green Plotter",
-  "short_name": "GreenPlotter",
+  "name": "Approach View",
+  "short_name": "ApproachView",
   "start_url": "/ApproachView/"
   "display": "standalone",
   "background_color": "#7ba05b",
