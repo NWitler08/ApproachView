@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Modern browsers -->
+<link rel="icon" type="image/png" href="favicon.png">
+<!-- Legacy/IE fallback -->
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Green Plotter</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Georgia', serif;
+      background: linear-gradient(to bottom, #d9cbb0, #7ba05b);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+    .container {
+      max-width: 1000px;
+      width: 100%;
+      border: 4px solid #c2a76c;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+    #hole-selector {
+      margin-bottom: 10px;
+    }
+    #image-container {
+      position: relative;
+      width: 100%;
+      max-height: 600px;
+      overflow: hidden;
+      border: 3px solid #c2a76c;
+    }
+    #green-image {
+      width: 100%;
+      display: block;
+    }
+    .dot {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .tooltip {
+      position: absolute;
+      background: white;
+      padding: 5px;
+      border: 1px solid #ccc;
+      font-size: 12px;
+      display: none;
+      z-index: 10;
+    }
+    .club-buttons {
+      position: absolute;
+      display: flex;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 4px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      z-index: 5;
+    }
+    .club-buttons button {
+      padding: 3px 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .filter-bar button {
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Green Plotter</h1>
+  <div class="container">
+    <select id="hole-selector">
+      <option value="">Select Hole</option>
+    </select>
+    <div class="filter-bar">
+      <button onclick="filterByClub('Wedges')">Wedges</button>
+      <button onclick="filterByClub('Short Irons')">Short Irons</button>
+      <button onclick="filterByClub('Long Irons')">Long Irons</button>
+      <button onclick="filterByClub('Woods')">Woods</button>
+      <button onclick="filterByClub('all')">Show All</button>
+      <button onclick="clearData()">Clear Shots</button>
+    </div>
+    <div id="image-container">
+      <img id="green-image" />
+    </div>
+  </div>
+  <div class="tooltip" id="tooltip"></div>
+  <div class="club-buttons" id="club-buttons" style="display: none;"></div>
+
+  <script>
+    const holeSelector = document.getElementById('hole-selector');
+const imageContainer = document.getElementById('image-container');
+const greenImage = document.getElementById('green-image');
+const tooltip = document.getElementById('tooltip');
+const clubButtons = document.getElementById('club-buttons');
+
+let currentHole = '';
+let shots = [];
+
+const clubColors = {
+  'Wedges': 'red',
+  'Short Irons': 'blue',
+  'Long Irons': 'green',
+  'Woods': 'yellow'
+};
+
+for (let i = 1; i <= 18; i++) {
+  const option = document.createElement('option');
+  option.value = `hole${i}`;
+  option.textContent = `Hole ${i}`;
+  holeSelector.appendChild(option);
+}
+
+// Auto-select the first hole on page load
+currentHole = 'hole1';
+holeSelector.value = currentHole;
+loadHoleData();
+
+holeSelector.addEventListener('change', () => {
+  currentHole = holeSelector.value;
+  loadHoleData();
+});
+
+greenImage.addEventListener('click', (e) => {
+  const rect = greenImage.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  showClubButtons(x, y);
+});
+
+function showClubButtons(x, y) {
+  const offsetX = 60;
+  const offsetY = 200;
+  clubButtons.style.left = `${x + offsetX}px`;
+  clubButtons.style.top = `${y + offsetY}px`;
+  clubButtons.innerHTML = '';
+  Object.keys(clubColors).forEach(club => {
+    const btn = document.createElement('button');
+    btn.innerText = club;
+    btn.onclick = () => addShot(x, y, club);
+    clubButtons.appendChild(btn);
+  });
+  clubButtons.style.display = 'flex';
+}
+
+function addShot(x, y, club) {
+  const date = new Date().toLocaleDateString();
+  const shot = { x, y, club, date };
+  shots.push(shot);
+  saveData();
+  renderShots();
+  clubButtons.style.display = 'none';
+}
+
+function saveData() {
+  localStorage.setItem(currentHole + '-shots', JSON.stringify(shots));
+}
+
+function loadHoleData() {
+  const data = localStorage.getItem(currentHole + '-shots');
+  shots = data ? JSON.parse(data) : [];
+
+  const img = localStorage.getItem(currentHole + '-image');
+  if (img) {
+    greenImage.src = img;
+  } else {
+    // fallback to public image if no uploaded image
+    const holeNumber = currentHole.replace('hole', '');
+    greenImage.src = `./images/${holeNumber}.png`;
+  }
+
+  renderShots();
+}
+
+function renderShots(filter = 'all') {
+  document.querySelectorAll('.dot').forEach(dot => dot.remove());
+  shots.forEach(shot => {
+    if (filter === 'all' || shot.club === filter) {
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dot.style.left = `${shot.x}px`;
+      dot.style.top = `${shot.y}px`;
+      dot.style.backgroundColor = clubColors[shot.club];
+      dot.onmouseenter = () => {
+        tooltip.style.left = `${shot.x + 15}px`;
+        tooltip.style.top = `${shot.y + 15}px`;
+        tooltip.innerHTML = `${shot.club}<br>${shot.date}`;
+        tooltip.style.display = 'block';
+      };
+      dot.onmouseleave = () => {
+        tooltip.style.display = 'none';
+      };
+      imageContainer.appendChild(dot);
+    }
+  });
+}
+
+function filterByClub(club) {
+  renderShots(club);
+}
+
+function clearData() {
+  if (confirm('Are you sure you want to clear all shots for this hole?')) {
+    localStorage.removeItem(currentHole + '-shots');
+    shots = [];
+    renderShots();
+  }
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() => {
+    console.log('Service Worker registered');
+  });
+}
+  </script>
+</body>
+</html>
