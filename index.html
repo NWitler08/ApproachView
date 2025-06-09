@@ -51,11 +51,14 @@
       max-height: 600px;
       overflow: hidden;
       border: 3px solid #c2a76c;
+      touch-action: manipulation; /* helps mobile click responsiveness */
     }
 
     #green-image {
       width: 100%;
       display: block;
+      user-select: none;
+      -webkit-user-drag: none;
     }
 
     .dot {
@@ -74,6 +77,8 @@
       font-size: 12px;
       display: none;
       z-index: 10;
+      pointer-events: none;
+      white-space: nowrap;
     }
 
     .club-buttons {
@@ -87,13 +92,15 @@
       border-radius: 5px;
       z-index: 20;
       pointer-events: auto;
-      transform: translate(-50%, -100%);
+      display: none;
+      /* Removed transform to prevent offset issues */
     }
 
     .club-buttons button {
       padding: 3px 6px;
       font-size: 12px;
       cursor: pointer;
+      user-select: none;
     }
 
     .filter-bar {
@@ -106,6 +113,7 @@
     .filter-bar button {
       padding: 5px 10px;
       cursor: pointer;
+      user-select: none;
     }
 
     /* Responsive styles for mobile screens */
@@ -168,11 +176,11 @@
       <button onclick="clearData()">Clear Shots</button>
     </div>
     <div id="image-container">
-      <img id="green-image" />
+      <img id="green-image" alt="Golf hole green" />
     </div>
   </div>
   <div class="tooltip" id="tooltip"></div>
-  <div class="club-buttons" id="club-buttons" style="display: none;"></div>
+  <div class="club-buttons" id="club-buttons"></div>
 
   <script>
     const holeSelector = document.getElementById('hole-selector');
@@ -191,6 +199,7 @@
       'Woods': 'yellow'
     };
 
+    // Populate hole selector 1 to 18
     for (let i = 1; i <= 18; i++) {
       const option = document.createElement('option');
       option.value = `hole${i}`;
@@ -198,7 +207,7 @@
       holeSelector.appendChild(option);
     }
 
-    // Auto-select the first hole on page load
+    // Auto-select first hole and load data
     currentHole = 'hole1';
     holeSelector.value = currentHole;
     loadHoleData();
@@ -209,26 +218,29 @@
     });
 
     greenImage.addEventListener('click', (e) => {
-      const rect = greenImage.getBoundingClientRect();
-      const xPercent = (e.clientX - rect.left) / rect.width;
-      const yPercent = (e.clientY - rect.top) / rect.height;
-      showClubButtons(xPercent, yPercent);
+      e.stopPropagation(); // prevent document click closing popup instantly
+
+      const containerRect = imageContainer.getBoundingClientRect();
+
+      // Calculate position relative to container top-left with scroll offset
+      const x = e.clientX - containerRect.left + window.scrollX;
+      const y = e.clientY - containerRect.top + window.scrollY;
+
+      // Calculate percentage relative to image dimensions for saving shot data
+      const xPercent = (e.clientX - containerRect.left) / greenImage.clientWidth;
+      const yPercent = (e.clientY - containerRect.top) / greenImage.clientHeight;
+
+      showClubButtons(x, y, xPercent, yPercent);
     });
 
-    // Only one listener on document to close club buttons if clicking outside
+    // Close club buttons if clicking outside image or club buttons
     document.addEventListener('click', (e) => {
-      const isInsideImage = greenImage.contains(e.target);
-      const isInsideButtons = clubButtons.contains(e.target);
-
-      if (!isInsideImage && !isInsideButtons) {
+      if (!imageContainer.contains(e.target) && !clubButtons.contains(e.target)) {
         clubButtons.style.display = 'none';
       }
     });
 
-    function showClubButtons(xPercent, yPercent) {
-      const x = xPercent * greenImage.offsetWidth;
-      const y = yPercent * greenImage.offsetHeight;
-
+    function showClubButtons(x, y, xPercent, yPercent) {
       clubButtons.style.left = `${x}px`;
       clubButtons.style.top = `${y}px`;
 
@@ -236,11 +248,16 @@
       Object.keys(clubColors).forEach(club => {
         const btn = document.createElement('button');
         btn.innerText = club;
-        btn.onclick = () => addShot(xPercent, yPercent, club);
+        btn.onclick = () => {
+          addShot(xPercent, yPercent, club);
+          clubButtons.style.display = 'none';
+        };
         clubButtons.appendChild(btn);
       });
 
       clubButtons.style.display = 'flex';
+      clubButtons.style.flexWrap = 'wrap';
+      clubButtons.style.gap = '5px';
     }
 
     function addShot(xPercent, yPercent, club) {
@@ -249,7 +266,6 @@
       shots.push(shot);
       saveData();
       renderShots();
-      clubButtons.style.display = 'none';
     }
 
     function saveData() {
@@ -272,6 +288,7 @@
     }
 
     function renderShots(filter = 'all') {
+      // Remove old dots
       document.querySelectorAll('.dot').forEach(dot => dot.remove());
 
       shots.forEach(shot => {
@@ -279,8 +296,8 @@
           const dot = document.createElement('div');
           dot.className = 'dot';
 
-          const x = shot.xPercent * greenImage.offsetWidth;
-          const y = shot.yPercent * greenImage.offsetHeight;
+          const x = shot.xPercent * greenImage.clientWidth;
+          const y = shot.yPercent * greenImage.clientHeight;
 
           dot.style.left = `${x}px`;
           dot.style.top = `${y}px`;
@@ -314,6 +331,7 @@
       }
     }
 
+    // Register service worker for PWA caching (optional)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').then(() => {
         console.log('Service Worker registered');
