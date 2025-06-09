@@ -75,18 +75,27 @@
       z-index: 10;
     }
 
-    .club-buttons {
-      position: absolute;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 4px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      z-index: 5;
-    }
+   .club-buttons {
+  position: absolute;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 4px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  z-index: 5;
 
+  /* New additions: */
+  transform: translate(-50%, -100%); /* Center above click */
+  pointer-events: auto;
+}
+    
+    #image-container {
+  position: relative;
+}
+    
+    
     .club-buttons button {
       padding: 3px 6px;
       font-size: 12px;
@@ -206,49 +215,47 @@ holeSelector.addEventListener('change', () => {
 });
 
 greenImage.addEventListener('click', (e) => {
-  const x = e.offsetX;
-  const y = e.offsetY;
-  showClubButtons(x, y);
+  const rect = greenImage.getBoundingClientRect();
+  const xPercent = (e.clientX - rect.left) / rect.width;
+  const yPercent = (e.clientY - rect.top) / rect.height;
+  showClubButtons(xPercent, yPercent);
+});
+
+// ✅ Only one listener on document
+document.addEventListener('click', (e) => {
+  const isInsideImage = greenImage.contains(e.target);
+  const isInsideButtons = clubButtons.contains(e.target);
+
+  if (!isInsideImage && !isInsideButtons) {
+    clubButtons.style.display = 'none';
+  }
 });
 
 
-function showClubButtons(x, y) {
+function showClubButtons(xPercent, yPercent) {
   const containerRect = imageContainer.getBoundingClientRect();
-  const buttonWidth = 160;
-  const buttonHeight = 80;
-  const offsetX = 60;
-  const offsetY = 20;
+  const x = xPercent * greenImage.offsetWidth;
+  const y = yPercent * greenImage.offsetHeight;
 
-  let left = x + offsetX;
-  let top = y + offsetY;
+  // Set the position of the buttons
+  clubButtons.style.left = `${x}px`;
+  clubButtons.style.top = `${y}px`;
 
-  if (left + buttonWidth > containerRect.width) {
-    left = containerRect.width - buttonWidth - 10;
-  }
-
-  if (top + buttonHeight > containerRect.height) {
-    top = containerRect.height - buttonHeight - 10;
-  }
-
-  clubButtons.style.left = `${left}px`;
-  clubButtons.style.top = `${top}px`;
-
+  // Generate buttons
   clubButtons.innerHTML = '';
   Object.keys(clubColors).forEach(club => {
     const btn = document.createElement('button');
     btn.innerText = club;
-    btn.onclick = () => addShot(x, y, club);
+    btn.onclick = () => addShot(xPercent, yPercent, club);
     clubButtons.appendChild(btn);
   });
 
   clubButtons.style.display = 'flex';
 }
 
-
-
-function addShot(x, y, club) {
+function addShot(xPercent, yPercent, club) {
   const date = new Date().toLocaleDateString();
-  const shot = { x, y, club, date };
+  const shot = { xPercent, yPercent, club, date };
   shots.push(shot);
   saveData();
   renderShots();
@@ -277,26 +284,35 @@ function loadHoleData() {
 
 function renderShots(filter = 'all') {
   document.querySelectorAll('.dot').forEach(dot => dot.remove());
+
   shots.forEach(shot => {
     if (filter === 'all' || shot.club === filter) {
       const dot = document.createElement('div');
       dot.className = 'dot';
-      dot.style.left = `${shot.x}px`;
-      dot.style.top = `${shot.y}px`;
+
+      const x = shot.xPercent * greenImage.offsetWidth;
+      const y = shot.yPercent * greenImage.offsetHeight;
+
+      dot.style.left = `${x}px`;
+      dot.style.top = `${y}px`;
       dot.style.backgroundColor = clubColors[shot.club];
+
       dot.onmouseenter = () => {
-        tooltip.style.left = `${shot.x + 15}px`;
-        tooltip.style.top = `${shot.y + 15}px`;
+        tooltip.style.left = `${x + 15}px`;
+        tooltip.style.top = `${y + 15}px`;
         tooltip.innerHTML = `${shot.club}<br>${shot.date}`;
         tooltip.style.display = 'block';
       };
+
       dot.onmouseleave = () => {
         tooltip.style.display = 'none';
       };
+
       imageContainer.appendChild(dot);
     }
   });
 }
+
 
 function filterByClub(club) {
   renderShots(club);
