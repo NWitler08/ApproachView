@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- IOS Browser -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Modern browsers -->
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />
-  <!-- Legacy/IE fallback -->
-  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
   <title>Green Plotter</title>
+
+  <!-- Favicon for desktop browsers -->
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
+  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+
+  <!-- PWA manifest and icons -->
   <link rel="manifest" href="manifest.json" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -84,14 +85,9 @@
       padding: 4px;
       border: 1px solid #ccc;
       border-radius: 5px;
-      z-index: 5;
-
-      /* Removed transform */
+      z-index: 20;
       pointer-events: auto;
-    }
-
-    #image-container {
-      position: relative;
+      transform: translate(-50%, -100%);
     }
 
     .club-buttons button {
@@ -219,7 +215,7 @@
       showClubButtons(xPercent, yPercent);
     });
 
-    // ✅ Only one listener on document
+    // Only one listener on document to close club buttons if clicking outside
     document.addEventListener('click', (e) => {
       const isInsideImage = greenImage.contains(e.target);
       const isInsideButtons = clubButtons.contains(e.target);
@@ -233,6 +229,9 @@
       const x = xPercent * greenImage.offsetWidth;
       const y = yPercent * greenImage.offsetHeight;
 
+      clubButtons.style.left = `${x}px`;
+      clubButtons.style.top = `${y}px`;
+
       clubButtons.innerHTML = '';
       Object.keys(clubColors).forEach(club => {
         const btn = document.createElement('button');
@@ -242,13 +241,6 @@
       });
 
       clubButtons.style.display = 'flex';
-
-      // Wait for next paint cycle so buttons have size, then position
-      requestAnimationFrame(() => {
-        const rect = clubButtons.getBoundingClientRect();
-        clubButtons.style.left = `${x - rect.width / 2}px`;
-        clubButtons.style.top = `${y - rect.height - 10}px`; // 10px above the click
-      });
     }
 
     function addShot(xPercent, yPercent, club) {
@@ -272,7 +264,6 @@
       if (img) {
         greenImage.src = img;
       } else {
-        // fallback to public image if no uploaded image
         const holeNumber = currentHole.replace('hole', '');
         greenImage.src = `./images/${holeNumber}.png`;
       }
