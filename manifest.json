@@ -1,7 +1,7 @@
 {
   "name": "Approach View",
   "short_name": "ApproachView",
-  "start_url": "/ApproachView/"
+  "start_url": "/ApproachView/",
   "display": "standalone",
   "background_color": "#7ba05b",
   "theme_color": "#7ba05b",
