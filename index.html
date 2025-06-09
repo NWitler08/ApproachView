@@ -224,22 +224,27 @@
     });
 
     function showClubButtons(xPercent, yPercent) {
-      const x = xPercent * greenImage.offsetWidth;
-      const y = yPercent * greenImage.offsetHeight;
+  const x = xPercent * greenImage.offsetWidth;
+  const y = yPercent * greenImage.offsetHeight;
 
-      clubButtons.style.left = `${x}px`;
-      clubButtons.style.top = `${y - clubButtons.offsetHeight - 10}px`;  // Position above click
+  clubButtons.innerHTML = '';
+  Object.keys(clubColors).forEach(club => {
+    const btn = document.createElement('button');
+    btn.innerText = club;
+    btn.onclick = () => addShot(xPercent, yPercent, club);
+    clubButtons.appendChild(btn);
+  });
 
-      clubButtons.innerHTML = '';
-      Object.keys(clubColors).forEach(club => {
-        const btn = document.createElement('button');
-        btn.innerText = club;
-        btn.onclick = () => addShot(xPercent, yPercent, club);
-        clubButtons.appendChild(btn);
-      });
+  clubButtons.style.display = 'flex';
 
-      clubButtons.style.display = 'flex';
-    }
+  // Wait for next paint cycle so buttons have size, then position
+  requestAnimationFrame(() => {
+    const rect = clubButtons.getBoundingClientRect();
+    clubButtons.style.left = `${x - rect.width / 2}px`;
+    clubButtons.style.top = `${y - rect.height - 10}px`;
+  });
+}
+
 
     function addShot(xPercent, yPercent, club) {
       const date = new Date().toLocaleDateString();
