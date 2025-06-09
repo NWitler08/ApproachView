@@ -223,9 +223,13 @@
       }
     });
 
-    function showClubButtons(xPercent, yPercent) {
+function showClubButtons(xPercent, yPercent) {
   const x = xPercent * greenImage.offsetWidth;
   const y = yPercent * greenImage.offsetHeight;
+
+  clubButtons.style.left = '0px'; // reset before measuring
+  clubButtons.style.top = '0px';  // reset before measuring
+  clubButtons.style.display = 'flex';
 
   clubButtons.innerHTML = '';
   Object.keys(clubColors).forEach(club => {
@@ -235,15 +239,18 @@
     clubButtons.appendChild(btn);
   });
 
-  clubButtons.style.display = 'flex';
-
-  // Wait for next paint cycle so buttons have size, then position
+  // After the popup content is rendered, calculate width and reposition
   requestAnimationFrame(() => {
-    const rect = clubButtons.getBoundingClientRect();
-    clubButtons.style.left = `${x - rect.width / 2}px`;
-    clubButtons.style.top = `${y - rect.height - 10}px`;
+    const popupWidth = clubButtons.offsetWidth;
+    const popupHeight = clubButtons.offsetHeight;
+
+    // Set left so popup is horizontally centered at click
+    clubButtons.style.left = `${x - popupWidth / 2}px`;
+    // Set top so popup appears directly above click with 10px margin
+    clubButtons.style.top = `${y - popupHeight - 10}px`;
   });
 }
+
 
 
     function addShot(xPercent, yPercent, club) {
