@@ -19,7 +19,6 @@
   <link rel="preload" href="fonts/AdrenalineHit.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
 
   <style>
-    /* Embed Adrenaline Hit font */
     @font-face {
       font-family: 'Adrenaline Hit';
       src: url('fonts/AdrenalineHit.woff2') format('woff2'),
@@ -157,7 +156,6 @@
       background-color: #e5e5e5;
     }
 
-    /* Responsive */
     @media (max-width: 600px) {
       body {
         padding: 10px;
@@ -232,7 +230,6 @@
     let currentHole = '';
     let shots = [];
 
-    // Club colors (Long Irons = white)
     const clubColors = {
       'Wedges': 'red',
       'Short Irons': 'blue',
@@ -240,7 +237,6 @@
       'Woods': 'yellow'
     };
 
-    // Load saved shots from localStorage if available
     function loadShotsFromStorage() {
       const saved = localStorage.getItem('greenPlotterShots');
       if (saved) {
@@ -252,20 +248,17 @@
       }
     }
 
-    // Save shots to localStorage
     function saveShotsToStorage() {
       localStorage.setItem('greenPlotterShots', JSON.stringify(shots));
     }
 
-    // Populate hole selector options
     for (let i = 1; i <= 18; i++) {
       const option = document.createElement('option');
-      option.value = hole${i};
-      option.textContent = Hole ${i};
+      option.value = `hole${i}`;
+      option.textContent = `Hole ${i}`;
       holeSelector.appendChild(option);
     }
 
-    // Auto-select first hole on load
     currentHole = 'hole1';
     holeSelector.value = currentHole;
 
@@ -276,19 +269,14 @@
 
     greenImage.addEventListener('click', (e) => {
       e.preventDefault();
-
       const rect = greenImage.getBoundingClientRect();
-
       const xClick = e.clientX;
       const yClick = e.clientY;
-
       const xPercent = (xClick - rect.left) / rect.width;
       const yPercent = (yClick - rect.top) / rect.height;
-
       showClubButtons(xClick, yClick, xPercent, yPercent);
     });
 
-    // Hide club buttons if clicking outside image or buttons
     document.addEventListener('click', (e) => {
       if (!imageContainer.contains(e.target) && !clubButtons.contains(e.target)) {
         clubButtons.style.display = 'none';
@@ -310,24 +298,19 @@
 
       clubButtons.style.display = 'flex';
 
-      // Position clubButtons directly above and horizontally centered on click
       setTimeout(() => {
         const btnWidth = clubButtons.offsetWidth;
         const btnHeight = clubButtons.offsetHeight;
-
-        // The image container rect
         const containerRect = imageContainer.getBoundingClientRect();
 
-        let leftPos = clientX - containerRect.left - btnWidth / 2;
-        let topPos = clientY - containerRect.top - btnHeight - 10; // 10px spacing above click
+        let leftPos = clientX - containerRect.left - btnWidth / 2 + 50;
+        let topPos = clientY - containerRect.top - btnHeight - 10 + 75;
 
-        // Clamp left position inside container
         leftPos = Math.max(0, Math.min(leftPos, containerRect.width - btnWidth));
-        // Clamp top position inside container, but allow negative if near top
         if (topPos < 0) topPos = clientY - containerRect.top + 15;
 
-        clubButtons.style.left = ${leftPos}px;
-        clubButtons.style.top = ${topPos}px;
+        clubButtons.style.left = `${leftPos}px`;
+        clubButtons.style.top = `${topPos}px`;
       }, 0);
     }
 
@@ -346,11 +329,9 @@
     }
 
     function renderShots(filterClub = 'all') {
-      // Remove all existing dots
       const existingDots = imageContainer.querySelectorAll('.dot');
       existingDots.forEach(dot => dot.remove());
 
-      // Filter shots
       const filteredShots = shots.filter(s => s.hole === currentHole && (filterClub === 'all' || s.club === filterClub));
 
       filteredShots.forEach(shot => {
@@ -358,19 +339,16 @@
         dot.className = 'dot';
         dot.style.backgroundColor = clubColors[shot.club] || 'black';
 
-        // Position dot inside image container
         const left = shot.xPercent * greenImage.clientWidth;
         const top = shot.yPercent * greenImage.clientHeight;
 
-        dot.style.left = ${left}px;
-        dot.style.top = ${top}px;
+        dot.style.left = `${left}px`;
+        dot.style.top = `${top}px`;
 
-        // Tooltip events
         dot.addEventListener('mouseenter', () => {
           tooltip.style.display = 'block';
-          tooltip.textContent = ${shot.club} on ${shot.date};
+          tooltip.textContent = `${shot.club} on ${shot.date}`;
 
-          // Calculate tooltip position relative to viewport
           const containerRect = imageContainer.getBoundingClientRect();
 
           let tipLeft = containerRect.left + left + 15;
@@ -383,8 +361,8 @@
             tipTop = containerRect.top + top + 15;
           }
 
-          tooltip.style.left = tipLeft + 'px';
-          tooltip.style.top = tipTop + 'px';
+          tooltip.style.left = `${tipLeft}px`;
+          tooltip.style.top = `${tipTop}px`;
         });
 
         dot.addEventListener('mouseleave', () => {
@@ -407,25 +385,20 @@
       }
     }
 
-    // Load shots from storage on start
-    loadShotsFromStorage();
-
-    // Load hole data and image with onload for proper sizing before rendering shots
     function loadHoleData() {
       if (!currentHole) {
         greenImage.src = '';
         renderShots();
         return;
       }
-      greenImage.src = images/${currentHole}.jpg; // Adjust path as needed
+      greenImage.src = `images/${currentHole}.jpg`;
       greenImage.onload = () => {
         renderShots();
       };
     }
 
-    // Initial load
+    loadShotsFromStorage();
     loadHoleData();
-
   </script>
 </body>
-</html> 
+</html>
