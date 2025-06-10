@@ -260,8 +260,8 @@
     // Populate hole selector options
     for (let i = 1; i <= 18; i++) {
       const option = document.createElement('option');
-      option.value = `hole${i}`;
-      option.textContent = `Hole ${i}`;
+      option.value = hole${i};
+      option.textContent = Hole ${i};
       holeSelector.appendChild(option);
     }
 
@@ -295,39 +295,41 @@
       }
     });
 
-   function showClubButtons(clientX, clientY, xPercent, yPercent) {
-  clubButtons.innerHTML = '';
+    function showClubButtons(clientX, clientY, xPercent, yPercent) {
+      clubButtons.innerHTML = '';
 
-  Object.keys(clubColors).forEach(club => {
-    const btn = document.createElement('button');
-    btn.innerText = club;
-    btn.onclick = () => {
-      addShot(xPercent, yPercent, club);
-      clubButtons.style.display = 'none';
-    };
-    clubButtons.appendChild(btn);
-  });
+      Object.keys(clubColors).forEach(club => {
+        const btn = document.createElement('button');
+        btn.innerText = club;
+        btn.onclick = () => {
+          addShot(xPercent, yPercent, club);
+          clubButtons.style.display = 'none';
+        };
+        clubButtons.appendChild(btn);
+      });
 
-  clubButtons.style.display = 'flex';
+      clubButtons.style.display = 'flex';
 
-  setTimeout(() => {
-    const btnWidth = clubButtons.offsetWidth;
-    const btnHeight = clubButtons.offsetHeight;
+      // Position clubButtons directly above and horizontally centered on click
+      setTimeout(() => {
+        const btnWidth = clubButtons.offsetWidth;
+        const btnHeight = clubButtons.offsetHeight;
 
-    const containerRect = imageContainer.getBoundingClientRect();
+        // The image container rect
+        const containerRect = imageContainer.getBoundingClientRect();
 
-    // 👇 Custom offset: 60px right and 200px down
-    let leftPos = clientX - containerRect.left + 60;
-    let topPos = clientY - containerRect.top + 200;
+        let leftPos = clientX - containerRect.left - btnWidth / 2;
+        let topPos = clientY - containerRect.top - btnHeight - 10; // 10px spacing above click
 
-    // Clamp inside container
-    leftPos = Math.max(0, Math.min(leftPos, containerRect.width - btnWidth));
-    topPos = Math.max(0, Math.min(topPos, containerRect.height - btnHeight));
+        // Clamp left position inside container
+        leftPos = Math.max(0, Math.min(leftPos, containerRect.width - btnWidth));
+        // Clamp top position inside container, but allow negative if near top
+        if (topPos < 0) topPos = clientY - containerRect.top + 15;
 
-    clubButtons.style.left = `${leftPos}px`;
-    clubButtons.style.top = `${topPos}px`;
-  }, 0);
-}
+        clubButtons.style.left = ${leftPos}px;
+        clubButtons.style.top = ${topPos}px;
+      }, 0);
+    }
 
     function addShot(xPercent, yPercent, club) {
       const date = new Date().toLocaleDateString();
@@ -360,13 +362,13 @@
         const left = shot.xPercent * greenImage.clientWidth;
         const top = shot.yPercent * greenImage.clientHeight;
 
-        dot.style.left = `${left}px`;
-        dot.style.top = `${top}px`;
+        dot.style.left = ${left}px;
+        dot.style.top = ${top}px;
 
         // Tooltip events
         dot.addEventListener('mouseenter', () => {
           tooltip.style.display = 'block';
-          tooltip.textContent = `${shot.club} on ${shot.date}`;
+          tooltip.textContent = ${shot.club} on ${shot.date};
 
           // Calculate tooltip position relative to viewport
           const containerRect = imageContainer.getBoundingClientRect();
@@ -415,7 +417,7 @@
         renderShots();
         return;
       }
-      greenImage.src = `images/${currentHole}.jpg`; // Adjust path as needed
+      greenImage.src = images/${currentHole}.jpg; // Adjust path as needed
       greenImage.onload = () => {
         renderShots();
       };
@@ -426,4 +428,4 @@
 
   </script>
 </body>
-</html>
+</html> 
