@@ -303,7 +303,7 @@
         const btnHeight = clubButtons.offsetHeight;
         const containerRect = imageContainer.getBoundingClientRect();
 
-        let leftPos = clientX - containerRect.left - btnWidth / 2 + 150;
+        let leftPos = clientX - containerRect.left - btnWidth / 2 + 185;
         let topPos = clientY - containerRect.top - btnHeight - 10 + 250;
 
         leftPos = Math.max(0, Math.min(leftPos, containerRect.width - btnWidth));
@@ -385,17 +385,25 @@
       }
     }
 
-    function loadHoleData() {
-      if (!currentHole) {
-        greenImage.src = '';
-        renderShots();
-        return;
-      }
-      greenImage.src = `images/${currentHole}.png`;
-      greenImage.onload = () => {
-        renderShots();
-      };
-    }
+  function loadHoleData() {
+  if (!currentHole) {
+    greenImage.src = '';
+    renderShots();
+    return;
+  }
+  const holeNumber = currentHole.replace('hole', '');
+
+  greenImage.onload = () => {
+    renderShots();
+  };
+
+  greenImage.onerror = () => {
+    console.error(`Failed to load image: images/${holeNumber}.png`);
+  };
+
+  greenImage.src = `images/${holeNumber}.png`;
+}
+
 
     loadShotsFromStorage();
     loadHoleData();
