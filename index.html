@@ -284,35 +284,46 @@
     });
 
     function showClubButtons(clientX, clientY, xPercent, yPercent) {
-      clubButtons.innerHTML = '';
+  clubButtons.innerHTML = '';
 
-      Object.keys(clubColors).forEach(club => {
-        const btn = document.createElement('button');
-        btn.innerText = club;
-        btn.onclick = () => {
-          addShot(xPercent, yPercent, club);
-          clubButtons.style.display = 'none';
-        };
-        clubButtons.appendChild(btn);
-      });
+  Object.keys(clubColors).forEach(club => {
+    const btn = document.createElement('button');
+    btn.innerText = club;
+    btn.onclick = () => {
+      addShot(xPercent, yPercent, club);
+      clubButtons.style.display = 'none';
+    };
+    clubButtons.appendChild(btn);
+  });
 
-      clubButtons.style.display = 'flex';
+  clubButtons.style.display = 'flex';
 
-      setTimeout(() => {
-        const btnWidth = clubButtons.offsetWidth;
-        const btnHeight = clubButtons.offsetHeight;
-        const containerRect = imageContainer.getBoundingClientRect();
+  setTimeout(() => {
+    const btnWidth = clubButtons.offsetWidth;
+    const btnHeight = clubButtons.offsetHeight;
+    const containerRect = imageContainer.getBoundingClientRect();
 
-        let leftPos = clientX - containerRect.left - btnWidth / 2 + 185;
-        let topPos = clientY - containerRect.top - btnHeight - 10 + 250;
+    let leftPos;
+    let topPos;
 
-        leftPos = Math.max(0, Math.min(leftPos, containerRect.width - btnWidth));
-        if (topPos < 0) topPos = clientY - containerRect.top + 15;
+    if (window.innerWidth <= 600) {
+      // Mobile-specific positioning
+      leftPos = clientX - containerRect.left - btnWidth / 2;
+      topPos = clientY - containerRect.top - 15 + 200;
+    } else {
+      // Desktop positioning (existing)
+      leftPos = clientX - containerRect.left - btnWidth / 2 + 150;
+      topPos = clientY - containerRect.top - btnHeight - 10 + 250;
 
-        clubButtons.style.left = `${leftPos}px`;
-        clubButtons.style.top = `${topPos}px`;
-      }, 0);
+      leftPos = Math.max(0, Math.min(leftPos, containerRect.width - btnWidth));
+      if (topPos < 0) topPos = clientY - containerRect.top + 15;
     }
+
+    clubButtons.style.left = `${leftPos}px`;
+    clubButtons.style.top = `${topPos}px`;
+  }, 0);
+}
+
 
     function addShot(xPercent, yPercent, club) {
       const date = new Date().toLocaleDateString();
